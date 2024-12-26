@@ -1,9 +1,11 @@
 package jwt
 
 import (
-	"TaskManagementSystemWithAnalytics/internal/model"
-	"github.com/golang-jwt/jwt/v5"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+
+	"Tasks/internal/model"
 )
 
 func NewToken(user model.User, secret string, duration time.Duration) (string, error) {

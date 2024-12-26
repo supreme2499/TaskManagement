@@ -1,41 +1,48 @@
 package config
 
 import (
-	"github.com/ilyakaznacheev/cleanenv"
 	"log"
-	"os"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
-	Env      string     `yaml:"env" env-default:"local"`
-	DataBase Storage    `yaml:"database" env-required:"true"`
-	Http     HTTPServer `yaml:"http_server" env-required:"true"`
+	Env      string          `envconfig:"ENV" default:"local"`
+	Postgres PostgresStorage `envconfig:"POSTGRES" required:"true"`
+	Redis    RedisStorage    `envconfig:"REDIS" required:"true"`
+	HTTP     HTTPServer      `envconfig:"HTTP_SERVER" required:"true"`
 }
 
-type Storage struct {
-	StorageURL     string `yaml:"storage_url" env-required:"true"`
-	MigrationsPath string `yaml:"migrations_path" env-required:"true"`
+type PostgresStorage struct {
+	StorageURL     string `envconfig:"STORAGE_URL" required:"true"`
+	MigrationsPath string `envconfig:"MIGRATIONS_PATH" required:"true"`
+}
+
+type RedisStorage struct {
+	Address  string `envconfig:"ADDRESS" required:"true"`
+	Database int    `envconfig:"DB" required:"true"`
 }
 
 type HTTPServer struct {
-	Address     string        `yaml:"address" env-default:"localhost:8080"`
-	Timeout     time.Duration `yaml:"timeout" env-default:"4"`
-	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60"`
+	Address     string        `envconfig:"ADDRESS" default:"localhost:8080"`
+	Timeout     time.Duration `envconfig:"TIMEOUT" default:"4s"`
+	IdleTimeout time.Duration `envconfig:"IDLE_TIMEOUT" default:"60s"`
+	WithTimeout time.Duration `envconfig:"WITH_TIMEOUT" default:"10s"`
+	//User        string        `envconfig:"USER" required:"true"`
+	//Password    string        `envconfig:"PASSWORD" required:"true"`
 }
 
 func MustLoad() *Config {
-	configPath := os.Getenv("CONFIG_PATH")
-	if configPath == "" {
-		log.Fatal("CONFIG_PATH is not set")
+	var cfg Config
+
+	if err := godotenv.Load(); err != nil {
+		log.Println("Не удалось загрузить файл .env, используем переменные окружения по умолчанию")
 	}
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Fatalf("config file does not exist: %s", configPath)
-	}
-	var cfg Config
-	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		log.Fatalf("cannot read config: %s", err)
+	if err := envconfig.Process("", &cfg); err != nil {
+		log.Fatalf("Ошибка при парсинге конфигурации: %s", err)
 	}
 	return &cfg
 }
