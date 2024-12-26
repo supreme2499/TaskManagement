@@ -2,3 +2,4 @@
 
 .idea
 
+/internal/http-server/auth
