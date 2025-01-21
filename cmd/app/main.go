@@ -38,7 +38,7 @@ func main() {
 		log.Error("failed to connect to kafka", sl.Err(err))
 	}
 	defer broker.Close()
-	serv := service.NewService(repoStorage, repoCache, broker)
+	serv := service.NewService(log, repoStorage, repoCache, broker)
 	deps := &handlers.Dependencies{
 		Service: serv,
 		Log:     log,
