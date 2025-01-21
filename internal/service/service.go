@@ -1,23 +1,32 @@
 package service
 
 import (
-	"Tasks/internal/interfaces"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/redis/go-redis/v9"
+	"log/slog"
 	"time"
 
+	"github.com/redis/go-redis/v9"
+
+	"Tasks/internal/interfaces"
+	"Tasks/internal/lib/logger/sl"
 	"Tasks/internal/model"
 )
 
 type Service struct {
-	repo  interfaces.StorageRepository
-	cache interfaces.CacheRepository
+	log      *slog.Logger
+	repo     interfaces.StorageRepository
+	cache    interfaces.CacheRepository
+	producer interfaces.Broker
 }
 
-func NewService(repo interfaces.StorageRepository, repoCache interfaces.CacheRepository) *Service {
-	return &Service{repo: repo, cache: repoCache}
+func NewService(log *slog.Logger,
+	repo interfaces.StorageRepository,
+	repoCache interfaces.CacheRepository,
+	producer interfaces.Broker) *Service {
+	return &Service{log: log, repo: repo, cache: repoCache, producer: producer}
 }
 
 func (s *Service) CreateTask(ctx context.Context, task model.Task) (int, error) {
@@ -37,8 +46,29 @@ func (s *Service) CreateTask(ctx context.Context, task model.Task) (int, error) 
 	return taskID, nil
 }
 
-func (s *Service) AddUser(ctx context.Context, userId int, taskID int) error {
-	return s.repo.AddNewUserTask(ctx, userId, taskID)
+func (s *Service) AddUser(ctx context.Context, userID int, taskID int) error {
+	err := s.repo.AddNewUserTask(ctx, userID, taskID)
+	if err != nil {
+		return err
+	}
+
+	msg := model.NotificationMessage{
+		Event:     "add_user",
+		Timestamp: time.Now().UTC(),
+		TaskID:    taskID,
+		UserID:    userID,
+	}
+
+	msgJSON, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	err = s.producer.Produce(msgJSON, "notification")
+	if err != nil {
+		return fmt.Errorf("failed to produce message: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) AllUsersWorkTask(ctx context.Context, taskID int) ([]model.User, error) {
@@ -54,17 +84,104 @@ func (s *Service) TaskShortDeadline(ctx context.Context, userID int) ([]model.Ta
 }
 
 func (s *Service) TaskUpdateStatus(ctx context.Context, newStatus string, taskID int) error {
-	s.cache.UpdateTaskStatusInCache(ctx, taskID, newStatus)
-	return s.repo.TaskUpdateStatus(ctx, newStatus, taskID)
+	const op = "service.TaskUpdateStatus"
+	log := s.log.With(slog.String("op", op))
+	err := s.cache.UpdateTaskStatusInCache(ctx, taskID, newStatus)
+	if err != nil {
+		return err
+	}
+	err = s.repo.TaskUpdateStatus(ctx, newStatus, taskID)
+	if err != nil {
+		return err
+	}
+
+	users, err := s.repo.UserByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		msg := model.NotificationMessage{
+			Event:        "change_status",
+			Timestamp:    time.Now().UTC(),
+			TaskID:       taskID,
+			UserID:       user,
+			ChangeStatus: newStatus,
+		}
+
+		msgJSON, err := json.Marshal(msg)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+		err = s.producer.Produce(msgJSON, "notification")
+		if err != nil {
+			log.Error("failed to produce message", sl.Err(err))
+		}
+	}
+	return nil
 }
 
 func (s *Service) DeleteTask(ctx context.Context, taskID int) error {
-	s.cache.DeleteTaskFromCache(ctx, taskID)
-	return s.repo.DeleteTask(ctx, taskID)
+	const op = "service.DeleteTask"
+	log := s.log.With(slog.String("op", op))
+
+	err := s.cache.DeleteTaskFromCache(ctx, taskID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.DeleteTask(ctx, taskID); err != nil {
+		return err
+	}
+
+	users, err := s.repo.UserByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+
+	for _, user := range users {
+		msg := model.NotificationMessage{
+			Event:     "delete_task",
+			Timestamp: time.Now().UTC(),
+			TaskID:    taskID,
+			UserID:    user,
+		}
+
+		msgJSON, err := json.Marshal(msg)
+		if err != nil {
+			return fmt.Errorf("failed to marshal message: %w", err)
+		}
+		err = s.producer.Produce(msgJSON, "notification")
+		if err != nil {
+			log.Error("failed to produce message", sl.Err(err))
+		}
+	}
+	return nil
 }
 
 func (s *Service) RemoveUserFromTask(ctx context.Context, userID int, taskID int) error {
-	return s.repo.RemoveUserFromTask(ctx, userID, taskID)
+	err := s.repo.RemoveUserFromTask(ctx, userID, taskID)
+	if err != nil {
+		return err
+	}
+
+	msg := model.NotificationMessage{
+		Event:     "remove_user",
+		Timestamp: time.Now().UTC(),
+		TaskID:    taskID,
+		UserID:    userID,
+	}
+
+	msgJSON, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message: %w", err)
+	}
+
+	err = s.producer.Produce(msgJSON, "notifications")
+	if err != nil {
+		return fmt.Errorf("failed to produce message: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) TaskByID(ctx context.Context, taskID int) (model.Task, error) {

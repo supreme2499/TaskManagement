@@ -1,14 +1,16 @@
 package repoCahe
 
 import (
+	"context"
+	"fmt"
+	"log/slog"
+	"time"
+
+	redis2 "github.com/redis/go-redis/v9"
+
 	"Tasks/internal/interfaces"
 	"Tasks/internal/model"
 	"Tasks/internal/storage/redis"
-	"context"
-	"fmt"
-	redis2 "github.com/redis/go-redis/v9"
-	"log/slog"
-	"time"
 )
 
 type Repo struct {

@@ -1,9 +1,11 @@
 package redis
 
 import (
-	"Tasks/internal/config"
 	"context"
+
 	"github.com/redis/go-redis/v9"
+
+	"Tasks/internal/config"
 )
 
 type Storage struct {
@@ -21,4 +23,8 @@ func New(ctx context.Context, cfg *config.Config) (*Storage, error) {
 	}
 
 	return &Storage{Client: rdb}, nil
+}
+
+func (s *Storage) Close(ctx context.Context) error {
+	return s.Client.Close()
 }

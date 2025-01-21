@@ -23,6 +23,7 @@ func SetupRouter(h *handlers.Handler, log *slog.Logger) *chi.Mux {
 	router.Get("/users", h.AllUsers)
 	router.Get("/tasks", h.AllTasks)
 	router.Get("/shortdeadline", h.ShortDeadline)
+	router.Get("/taskbyid", h.GetTaskByID)
 	router.Put("/status", h.UpdateStatus)
 	router.Delete("/task", h.DeleteTask)
 	router.Delete("/user", h.RemoveUser)

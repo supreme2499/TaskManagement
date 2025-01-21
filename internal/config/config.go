@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	Env      string          `envconfig:"ENV" default:"local"`
-	Postgres PostgresStorage `envconfig:"POSTGRES" required:"true"`
-	Redis    RedisStorage    `envconfig:"REDIS" required:"true"`
-	HTTP     HTTPServer      `envconfig:"HTTP_SERVER" required:"true"`
+	Env            string          `envconfig:"ENV" default:"local"`
+	Postgres       PostgresStorage `envconfig:"POSTGRES" required:"true"`
+	Redis          RedisStorage    `envconfig:"REDIS" required:"true"`
+	HTTP           HTTPServer      `envconfig:"HTTP_SERVER" required:"true"`
+	KafkaAddresses []string        `envconfig:"KAFKA_ADDRESSES" required:"true"`
 }
 
 type PostgresStorage struct {

@@ -132,6 +132,7 @@ func (h *Handler) AddUserFromTask(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// AllTasks Returns all the tasks that the user is working on. Accepts a UserID
 func (h *Handler) AllTasks(w http.ResponseWriter, r *http.Request) {
 	const op = "handlers.AllTasks"
 	log := h.log.With(
@@ -156,6 +157,7 @@ func (h *Handler) AllTasks(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// AllUsers Returns all users working on a task by taskID
 func (h *Handler) AllUsers(w http.ResponseWriter, r *http.Request) {
 	const op = "handlers.AllUsers"
 	log := h.log.With(slog.String("op", op))
@@ -214,6 +216,7 @@ func (h *Handler) RemoveUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ShortDeadline
 func (h *Handler) ShortDeadline(w http.ResponseWriter, r *http.Request) {
 	const op = "handlers.ShortDeadline"
 	log := h.log.With(slog.String("op", op))

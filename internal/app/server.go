@@ -34,8 +34,8 @@ func New(cfg *config.Config, log *slog.Logger, handler http.Handler) *Server {
 func (s *Server) Run() error {
 	s.log.Info("starting server", slog.String("address", s.cfg.HTTP.Address))
 
-	chdone := make(chan os.Signal, 1)
-	signal.Notify(chdone, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	doneCh := make(chan os.Signal, 1)
+	signal.Notify(doneCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	// Запуск сервера в отдельной горутине
 	go func() {
@@ -47,7 +47,7 @@ func (s *Server) Run() error {
 	s.log.Info("server started")
 
 	// Ожидание сигнала завершения
-	<-chdone
+	<-doneCh
 	s.log.Info("stopping server")
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.HTTP.WithTimeout)

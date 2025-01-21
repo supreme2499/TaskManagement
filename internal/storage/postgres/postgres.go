@@ -19,3 +19,8 @@ func New(ctx context.Context, cfg *config.Config) (*Storage, error) {
 	}
 	return &Storage{Pool: pdb}, nil
 }
+
+func (s *Storage) Close() error {
+	s.Pool.Close()
+	return nil
+}

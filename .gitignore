@@ -3,3 +3,4 @@
 .idea
 
 /internal/http-server/auth
+/internal/lib/jwt

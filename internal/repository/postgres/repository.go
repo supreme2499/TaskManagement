@@ -1,15 +1,15 @@
 package repoStorage
 
 import (
-	"Tasks/internal/interfaces"
-	"Tasks/internal/storage/postgres"
 	"context"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"Tasks/internal/interfaces"
 	"Tasks/internal/lib/logger/sl"
 	"Tasks/internal/model"
+	"Tasks/internal/storage/postgres"
 )
 
 type Repo struct {
@@ -249,4 +249,39 @@ func (r *Repo) TaskByID(ctx context.Context, taskID int) (model.Task, error) {
 
 	log.Info("task retrieved successfully", slog.Int("taskID", task.ID))
 	return task, nil
+}
+
+// получение всех userID по taskID
+func (r *Repo) UserByID(ctx context.Context, taskID int) ([]int, error) {
+	const op = "storage.postgres.GetUserByID"
+	log := r.log.With(slog.String("op", op))
+	log.Info("retrieving all user IDs for the task")
+
+	query := "SELECT user_id FROM task_assignments WHERE task_id = $1"
+
+	rows, err := r.postgres.Pool.Query(ctx, query, taskID)
+	if err != nil {
+		log.Error("failed to execute query", sl.Err(err))
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var userIDs []int
+	for rows.Next() {
+		var userID int
+		err := rows.Scan(&userID)
+		if err != nil {
+			log.Error("failed to scan row", sl.Err(err))
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		userIDs = append(userIDs, userID)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error("row iteration error", sl.Err(err))
+		return nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	log.Info("successfully retrieved user IDs", slog.Int("userCount", len(userIDs)))
+	return userIDs, nil
 }

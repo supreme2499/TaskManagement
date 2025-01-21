@@ -16,6 +16,7 @@ type StorageRepository interface {
 	DeleteTask(ctx context.Context, taskID int) error
 	RemoveUserFromTask(ctx context.Context, userID int, taskID int) error
 	TaskByID(ctx context.Context, taskID int) (model.Task, error)
+	UserByID(ctx context.Context, taskID int) ([]int, error)
 }
 
 type CacheRepository interface {
@@ -23,4 +24,8 @@ type CacheRepository interface {
 	GetTaskFromCache(ctx context.Context, taskID int) (model.Task, error)
 	UpdateTaskStatusInCache(ctx context.Context, taskID int, status string) error
 	DeleteTaskFromCache(ctx context.Context, taskID int) error
+}
+
+type Broker interface {
+	Produce(message []byte, topic string) error
 }
