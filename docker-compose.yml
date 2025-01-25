@@ -21,6 +21,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  migrator:
+    image: golang:1.23.2-alpine
+    container_name: migrator
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "go run ./cmd/migrator/main.go"
+    depends_on:
+      - postgres
+    networks:
+     - app-net
+    dns:
+      - 8.8.8.8
+
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.1
     hostname: zookeeper
@@ -100,10 +115,25 @@ services:
     networks:
       - kafka-net
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: application
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - app-net
+    dns:
+      - 8.8.8.8
 volumes:
   redis_data:
   postgres_data:
 
 networks:
   kafka-net:
+    driver: bridge
+  app-net:
     driver: bridge

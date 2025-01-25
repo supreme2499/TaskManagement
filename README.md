@@ -21,7 +21,7 @@ API для управления заметками с поддержкой Postg
 1. Клонируйте репозиторий:
    ```
    https://github.com/supreme2499/TaskManagement.git
-   cd notes-management-api
+   cd TaskManagement
    ```
 
 2. Настройте .env файл(пример):

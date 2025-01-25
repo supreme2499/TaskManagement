@@ -38,8 +38,8 @@ type HTTPServer struct {
 func MustLoad() *Config {
 	var cfg Config
 
-	if err := godotenv.Load(); err != nil {
-		log.Println("Не удалось загрузить файл .env, используем переменные окружения по умолчанию")
+	if err := godotenv.Load(".env"); err != nil {
+		log.Println("Не удалось загрузить файл .env, используем переменные окружения по умолчанию ", err)
 	}
 
 	if err := envconfig.Process("", &cfg); err != nil {
