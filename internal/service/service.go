@@ -32,12 +32,12 @@ func NewService(log *slog.Logger,
 func (s *Service) CreateTask(ctx context.Context, task model.Task) (int, error) {
 	currentTime := time.Now()
 	if task.Deadline.Before(currentTime) {
-		return 0, fmt.Errorf("task deadline is too far in the past")
+		return -1, fmt.Errorf("task deadline is too far in the past")
 	}
 
 	taskID, err := s.repo.CreateNewTask(ctx, task)
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 	err = s.cache.InsertingCache(ctx, task)
 	if err != nil {

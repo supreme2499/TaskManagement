@@ -6,6 +6,7 @@ import (
 	"Tasks/internal/model"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@v2.51.1 --name=StorageRepository --output=../service/mocks
 type StorageRepository interface {
 	CreateNewTask(ctx context.Context, task model.Task) (int, error)
 	GetAllUsersWorkTask(ctx context.Context, taskID int) ([]model.User, error)
@@ -19,6 +20,7 @@ type StorageRepository interface {
 	UserByID(ctx context.Context, taskID int) ([]int, error)
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.51.1 --name=CacheRepository --output=../service/mocks
 type CacheRepository interface {
 	InsertingCache(ctx context.Context, task model.Task) error
 	GetTaskFromCache(ctx context.Context, taskID int) (model.Task, error)
@@ -26,6 +28,7 @@ type CacheRepository interface {
 	DeleteTaskFromCache(ctx context.Context, taskID int) error
 }
 
+//go:generate go run github.com/vektra/mockery/v2@v2.51.1 --name=Broker --output=../service/mocks
 type Broker interface {
 	Produce(message []byte, topic string) error
 }
