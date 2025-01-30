@@ -1,13 +1,14 @@
 package service
 
 import (
-	"Tasks/internal/lib/logger/handler/slogdiscard"
 	"context"
 	"errors"
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
+	"Tasks/internal/lib/logger/handler/slogdiscard"
 	"Tasks/internal/model"
 	mockery "Tasks/internal/service/mocks"
 )
