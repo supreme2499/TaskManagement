@@ -5,9 +5,11 @@ CREATE TABLE users (
                        access_level INT NOT NULL DEFAULT 1
 );
 
+CREATE INDEX idx_username ON users(username);
+
 CREATE TABLE tasks (
                        task_id SERIAL PRIMARY KEY,
-                       name_task VARCHAR(255) NOT NULL,
+                       title VARCHAR(255) NOT NULL,
                        description TEXT,
                        status VARCHAR(50) DEFAULT 'todo',
                        deadline TIMESTAMP,
@@ -21,4 +23,3 @@ CREATE TABLE task_assignments (
                                   task_id INT NOT NULL REFERENCES tasks(task_id),
                                   UNIQUE(user_id, task_id)
 );
-

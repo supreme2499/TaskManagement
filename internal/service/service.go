@@ -160,10 +160,12 @@ func (s *Service) DeleteTask(ctx context.Context, taskID int) error {
 }
 
 func (s *Service) RemoveUserFromTask(ctx context.Context, userID int, taskID int) error {
+	log := s.log.With(slog.String("op", "service.RemoveUserFromTask"))
 	err := s.repo.RemoveUserFromTask(ctx, userID, taskID)
 	if err != nil {
 		return err
 	}
+	log.Info("successful removal of the user from the database")
 
 	msg := model.NotificationMessage{
 		Event:     "remove_user",
@@ -181,6 +183,7 @@ func (s *Service) RemoveUserFromTask(ctx context.Context, userID int, taskID int
 	if err != nil {
 		return fmt.Errorf("failed to produce message: %w", err)
 	}
+	log.Info("successfully sending a message to kafka")
 	return nil
 }
 

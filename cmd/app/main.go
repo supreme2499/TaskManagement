@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 
-	"Tasks/internal/app"
+	app "Tasks/internal/app"
 	"Tasks/internal/config"
 	"Tasks/internal/http-server/handlers"
 	k "Tasks/internal/kafka"
 	"Tasks/internal/lib/logger"
 	"Tasks/internal/lib/logger/sl"
 	repo "Tasks/internal/repository/postgres"
-	repoCahe "Tasks/internal/repository/redis"
+	repoCache "Tasks/internal/repository/redis"
 	"Tasks/internal/service"
 	"Tasks/internal/storage"
 )
@@ -24,7 +24,9 @@ func main() {
 	storages, err := storage.NewStorage(context.Background(), cfg)
 	if err != nil {
 		log.Error("failed to connect to database", sl.Err(err))
+		panic(err)
 	}
+	log.Info("successful connection to the database")
 	defer func() {
 		if err := storages.Close(context.TODO()); err != nil {
 			log.Error("Failed to close storages", sl.Err(err))
@@ -32,12 +34,14 @@ func main() {
 	}()
 
 	repoStorage := repo.NewStorage(storages.Postgres, log)
-	repoCache := repoCahe.NewCache(storages.Redis, log)
+	repoCache := repoCache.NewCache(storages.Redis, log)
 	broker, err := k.New(cfg.KafkaAddresses)
 	if err != nil {
 		log.Error("failed to connect to kafka", sl.Err(err))
+		panic(err)
 	}
-	defer broker.Close()
+	log.Info("successful connection to the kafka")
+	//defer broker.Close()
 	serv := service.NewService(log, repoStorage, repoCache, broker)
 	deps := &handlers.Dependencies{
 		Service: serv,

@@ -27,7 +27,7 @@ func (r *Repo) CreateNewTask(ctx context.Context, task model.Task) (int, error) 
 	log := r.log.With(slog.String("op", op))
 	log.Info("create-new-task а new task")
 
-	query := "INSERT INTO tasks (name_task, description, deadline) " +
+	query := "INSERT INTO tasks (title, description, deadline) " +
 		"VALUES ($1, $2, $3) RETURNING task_id"
 	err := r.postgres.Pool.QueryRow(ctx, query, task.NameTask, task.Description, task.Deadline).Scan(&task.ID)
 	if err != nil {
@@ -227,7 +227,7 @@ func (r *Repo) TaskByID(ctx context.Context, taskID int) (model.Task, error) {
 
 	log.Info("retrieving task by ID")
 
-	query := "SELECT task_id, name_task, description, status, deadline, created_at, updated_at FROM tasks WHERE task_id = $1"
+	query := "SELECT task_id, title, description, status, deadline, created_at, updated_at FROM tasks WHERE task_id = $1"
 
 	var task model.Task
 	err := r.postgres.Pool.QueryRow(ctx, query, taskID).Scan(

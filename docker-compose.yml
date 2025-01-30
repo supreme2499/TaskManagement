@@ -1,16 +1,23 @@
 
 services:
   redis:
-    image: redis:latest
+    image: redis:7.4.1
     container_name: redis_container
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - app-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   postgres:
-    image: postgres:latest
+    image: postgres:17.2
     container_name: postgres_container
     ports:
       - "5436:5432"
@@ -20,6 +27,13 @@ services:
       POSTGRES_DB: taskmanag
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   migrator:
     image: golang:1.23.2-alpine
@@ -34,6 +48,8 @@ services:
      - app-net
     dns:
       - 8.8.8.8
+    env_file:
+      - .env
 
 
   zookeeper:
@@ -50,6 +66,11 @@ services:
       ZOOKEEPER_SYNC_LIMIT: 2
     networks:
       - kafka-net
+    healthcheck:
+      test: [ "CMD", "zkServer.sh", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka1:
     image: confluentinc/cp-server:7.7.1
@@ -66,6 +87,11 @@ services:
       - zookeeper
     networks:
       - kafka-net
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9091" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka2:
     image: confluentinc/cp-server:7.7.1
@@ -82,6 +108,11 @@ services:
       - zookeeper
     networks:
       - kafka-net
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka3:
     image: confluentinc/cp-server:7.7.1
@@ -98,9 +129,14 @@ services:
       - zookeeper
     networks:
       - kafka-net
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9093" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   kafka-ui:
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:0.7.2
     container_name: kafka-ui
     ports:
       - "9020:8080"
@@ -114,6 +150,11 @@ services:
       - kafka3
     networks:
       - kafka-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   app:
     build:
@@ -126,8 +167,21 @@ services:
       - .env
     networks:
       - app-net
+      - kafka-net
     dns:
       - 8.8.8.8
+    depends_on:
+      - postgres
+      - redis
+      - kafka1
+      - kafka2
+      - kafka3
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   redis_data:
   postgres_data:

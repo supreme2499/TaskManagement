@@ -2,9 +2,9 @@ package config
 
 import (
 	"log"
+	"os"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -38,8 +38,14 @@ type HTTPServer struct {
 func MustLoad() *Config {
 	var cfg Config
 
-	if err := godotenv.Load(".env"); err != nil {
-		log.Println("Не удалось загрузить файл .env, используем переменные окружения по умолчанию ", err)
+	//if err := godotenv.Load(".env"); err != nil {
+	//	log.Println("Не удалось загрузить файл .env", err)
+	//}
+	envVars := os.Environ()
+
+	// Логируем их
+	for _, envVar := range envVars {
+		log.Println(envVar)
 	}
 
 	if err := envconfig.Process("", &cfg); err != nil {
